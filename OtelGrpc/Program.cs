@@ -1,3 +1,4 @@
+using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OtelGrpc.Services;
@@ -14,7 +15,17 @@ builder.Services.AddOpenTelemetry()
     {
         metricsBuilder.SetResourceBuilder(resourceBuilder);
         
-        metricsBuilder.AddOtlpExporter();
+        
+        // Use default OTLP protocol
+        // metricsBuilder.AddOtlpExporter();
+        
+        // Use HTTP/Protobuf OTLP exporter to push directly to Prometheus 
+        metricsBuilder.AddOtlpExporter((exporterOptions, metricReaderOptions) =>
+        {
+            exporterOptions.Endpoint = new Uri("http://localhost:9090/api/v1/otlp/v1/metrics");
+            exporterOptions.Protocol = OtlpExportProtocol.HttpProtobuf;
+            metricReaderOptions.PeriodicExportingMetricReaderOptions.ExportIntervalMilliseconds = 1000;
+        });
 
         // !!! THIS DOES NOT WORK !!!
         // c.AddMeter("Grpc.Net.Client")
